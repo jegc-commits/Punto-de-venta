@@ -1,5 +1,7 @@
+import 'dart:io' show Platform;
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Singleton que abre la base SQLite. Para pruebas se pasa [ruta].
 class BaseDatos {
@@ -7,6 +9,13 @@ class BaseDatos {
 
   static Future<Database> abrir({String? ruta}) async {
     if (_db != null && ruta == null) return _db!;
+
+    // En escritorio (Linux/Windows/macOS) sqflite no tiene implementación
+    // nativa: usamos la factoría FFI.
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
 
     final destino =
         ruta ?? p.join(await getDatabasesPath(), 'punto_venta_dolores.db');
